@@ -27,7 +27,7 @@
 | Cadastro de Brinquedos / Pacotes / Usuários | ✅ via menu ⋮ | ❌ |
 | Sair / trocar perfil | ✅ via menu ⋮ | ✅ via menu ⋮ |
 
-Cada usuário tem status **Ativo/Inativo**. Usuários inativos **não aparecem mais** na tela de seleção de perfil (antes apareciam esmaecidos; a regra foi simplificada para listar só ativos).
+O cadastro de usuário tem nome, perfil, **e-mail**, **telefone**, **data de nascimento** e PIN. Cada usuário tem status **Ativo/Inativo**. Usuários inativos **não aparecem mais** na tela de seleção de perfil (antes apareciam esmaecidos; a regra foi simplificada para listar só ativos).
 
 ---
 
@@ -66,8 +66,8 @@ Cada usuário tem status **Ativo/Inativo**. Usuários inativos **não aparecem m
 Tela **Novo Atendimento** abre com um filtro no topo: **"Brinquedos"** (padrão) ou **"Pacote"**.
 
 - **Modo Brinquedos:** grade de brinquedos ativos (com foto real cadastrada) + seção "Tempo" com chips **10 / 15 / 20 / 30 min** e um quinto chip **"Outro"** que revela um campo numérico para o operador digitar qualquer duração. Valor estimado = preço/min do brinquedo × minutos escolhidos, recalculado ao vivo.
-- **Modo Pacote:** lista os pacotes que estão **Ativos** e com a flag **"Tempo fixo no atendimento"** ligada — cada card mostra nome do pacote, valor, tempo (com unidade) e os brinquedos inclusos. Tempo é convertido internamente para minutos (minutos ×1, horas ×60, dias ×1440, meses ×43200).
-- Nome da criança é opcional em ambos os modos.
+- **Modo Pacote:** lista os pacotes que estão **Ativos** e com a flag **"Exibir pacote no atendimento"** (`exibe_pacote_atendimento`) ligada — cada card mostra nome do pacote, valor, tempo (com unidade) e os brinquedos inclusos. Tempo é convertido internamente para minutos (minutos ×1, horas ×60, dias ×1440, meses ×43200).
+- Nome da criança, **telefone do cliente** e **nome do responsável** são opcionais em ambos os modos (o responsável cobre o caso de a criança ser atendida sem o responsável presente). Telefone e responsável aparecem na tela de detalhe do atendimento, não nos cards resumidos.
 - Um único toque em "Iniciar atendimento" cria o registro (`id`, `toy`, `cliente`, `op` = usuário logado, `horaInicio`, `data`, `minutos`, `valor`, `status:'ativo'`) e o cronômetro real começa a contar a partir de `Date.now()`.
 
 ### 5.2 Atendimento — ciclo de vida e ações
@@ -84,28 +84,37 @@ Tela **Novo Atendimento** abre com um filtro no topo: **"Brinquedos"** (padrão)
 - **Finalizar:** leva à cobrança normalmente; se já pago antecipado, encerra direto sem pedir pagamento de novo. Ao finalizar, o registro muda para `status:'finalizado'`, some da lista de ativos e passa a aparecer no Histórico.
 - **Alerta sonoro:** toca um bipe duplo (gerado via Web Audio API, sem arquivo externo) na primeira vez que o tempo de um atendimento chega a zero. Não repete a cada segundo, não toca para atendimentos de pacote nem pausados, e é reativado se o tempo for estendido depois de já ter tocado.
 
-### 5.3 Pagamento (Pix / Dinheiro / Cartão)
+### 5.3 Pagamento (Pix / Dinheiro / Cartão de Crédito / Cartão de Débito)
 
+Os meios de pagamento seguem exatamente os 4 da modelagem: `PIX`, `CREDITO`, `DEBITO`, `DINHEIRO`.
+
+- **Desconto:** campo opcional em valor monetário, preenchido antes de confirmar. O total a cobrar passa a ser `valor - desconto`, com o valor original riscado e o desconto exibido ao lado — nunca só o número final. O desconto fica gravado no registro e aparece no histórico.
 - **Pix:** QR code ilustrativo + chave/CNPJ configurado, valor em destaque.
-- **Dinheiro:** campo de valor recebido + chips de valores rápidos, cálculo automático de troco, botão de confirmar bloqueado se o valor for insuficiente.
-- **Cartão:** mensagem orientando a usar a maquininha do estabelecimento; botão vira "Confirmar recebimento na maquininha".
-- Estado de sucesso com ícone de check e retorno automático (para Início, se finalização normal; para o detalhe, se pagamento antecipado).
+- **Dinheiro:** campo de valor recebido + chips de valores rápidos, cálculo automático de troco (contra o valor daquela linha de pagamento), confirmação bloqueada se o recebido for menor.
+- **Cartão:** ao escolher "Cartão", dois sub-chips **obrigatórios** — Crédito / Débito. A confirmação só libera depois de escolher um dos dois. Nos textos (histórico, resumo de sucesso, cards) aparece "Cartão de Crédito" / "Cartão de Débito", nunca "Cartão" genérico.
+- **Pagamento dividido:** cada cobrança guarda uma **lista** de pagamentos (`{metodo, valor}`), não um método único. O operador informa o valor pago em um método, usa "Pagar o restante em outro método" e repete quantas vezes precisar; o saldo restante fica visível o tempo todo e as linhas já informadas podem ser removidas. Para atendimentos a confirmação só libera quando a soma cobre o total; para locações é possível registrar um pagamento parcial explicitamente.
+- Onde antes havia um texto único de método, agora se exibe a lista de forma legível (ex.: "Pix + Dinheiro").
+- Estado de sucesso com ícone de check e retorno automático (para Início, se finalização normal; para o detalhe, se pagamento antecipado; para Locações, se for cobrança de locação).
 
 ### 5.4 Cadastro de Brinquedos
 
-Campos: foto (upload com pré-visualização), nome, faixa etária, capacidade máxima, valor por minuto, valor para locação, ativo/inativo. Edição ao tocar no item da lista (toggle ativo/inativo tem toque isolado, não abre edição). Imagem cadastrada aparece em todas as telas que referenciam aquele brinquedo (Novo Atendimento, cards de atendimento, detalhe).
+Campos: foto (upload com pré-visualização), nome, faixa etária, capacidade máxima, valor por minuto, valor para locação, **cor predominante** (chips com cores comuns + opção "Outra" para digitar) e ativo/inativo. Edição ao tocar no item da lista (toggle ativo/inativo tem toque isolado, não abre edição). Imagem cadastrada aparece em todas as telas que referenciam aquele brinquedo (Novo Atendimento, cards de atendimento, detalhe).
 
 ### 5.5 Cadastro de Pacotes
 
-Campos: **imagem do pacote** (upload, aparece como miniatura nos atendimentos criados a partir dele), nome, brinquedos inclusos (seleção múltipla, com opção especial "Todos os brinquedos"), valor, **tempo numérico + unidade** (Minutos/Horas/Dias/Meses — substituiu o campo de texto livre original), interruptor **"Tempo fixo no atendimento"** (só pacotes com essa flag ligada aparecem no modo "Pacote" de Novo Atendimento) e ativo/inativo. Edição ao tocar no item.
+Campos: **imagem do pacote** (upload, aparece como miniatura nos atendimentos criados a partir dele), nome, brinquedos inclusos (seleção múltipla, com opção especial "Todos os brinquedos"), valor, **tempo numérico + unidade** (Minutos/Horas/Dias/Meses — substituiu o campo de texto livre original), interruptor **"Exibir pacote no atendimento"** (`exibe_pacote_atendimento` — só pacotes com essa flag ligada aparecem no modo "Pacote" de Novo Atendimento) e ativo/inativo. Edição ao tocar no item.
 
-Pacote de exemplo: **"Pulseira Vale Tudo"** — R$ 30,00, acesso a "Todos os brinquedos", 8 horas, com imagem própria cadastrada, flag de tempo fixo ativa.
+Pacote de exemplo: **"Pulseira Vale Tudo"** — R$ 30,00, acesso a "Todos os brinquedos", 8 horas, com imagem própria cadastrada, flag de exibição no atendimento ativa.
 
 ### 5.6 Locações (CRUD completo)
 
 Tela redesenhada como "Gestão de Locações":
 - Abas de filtro: **Todas / Confirmadas / Em análise**.
-- Cada card tem faixa colorida à esquerda + selo de status preenchido (verde/laranja/vermelho), nome do evento (campo próprio, separado do nome do cliente), cliente, data/horário, caixa cinza com os brinquedos/combo, e "Valor total" em destaque.
+- **Status:** Em análise (laranja), Confirmada (verde), Cancelada (vermelho) e **Finalizado (navy)**. "Finalizado" **não é selecionável no formulário** — é atribuído automaticamente quando o pagamento total da locação é confirmado.
+- **Pagamento da locação:** botão de moeda no card abre a mesma tela de cobrança dos atendimentos (mesmos 4 meios, desconto e divisão entre métodos). Pagamentos parciais são acumulados na locação, que continua no status atual até o total ser atingido; ao quitar, o status muda sozinho para "Finalizado" e o botão de pagamento some do card.
+- **Campos do cliente:** nome do evento, cliente, telefone, **e-mail** (opcional), data e horário.
+- **Pacote + brinquedos avulsos:** a locação pode referenciar **um pacote** (seletor "Nenhum" + pacotes ativos) e, adicionalmente, brinquedos avulsos em seleção múltipla. O valor total sugerido soma o valor do pacote com o valor de locação de cada brinquedo avulso. O card mostra o pacote e os avulsos juntos.
+- Cada card tem faixa colorida à esquerda + selo de status preenchido, nome do evento (campo próprio, separado do nome do cliente), cliente, data/horário, caixa cinza com pacote/brinquedos, linha de pagamentos (quando houver) e "Valor total" em destaque.
 - Botão de cancelar (ícone) em cada card ativo, com **modal de confirmação próprio do app** (não usa `window.confirm`, que é bloqueado no ambiente de preview).
 - Botão flutuante azul **"+"** fixo no canto inferior direito, **acima da tab bar**, que não se move com o scroll da lista (corrigido — antes ele fazia parte da área rolável).
 - Tocar no card (quando não cancelado) abre edição.
@@ -113,10 +122,10 @@ Tela redesenhada como "Gestão de Locações":
 ### 5.7 Histórico de Atendimentos
 
 Dentro da aba "Atendimentos", alternância **Ativos / Histórico**. Na aba Histórico:
-- **Filtro de período:** Hoje / Últimos 7 dias / Últimos 13 dias / Personalizado (revela dois campos de data).
+- **Filtro de período:** Hoje / Últimos 7 dias / Personalizado (revela dois campos de data).
 - **Filtro de monitor** (só para Gestor): "Todos" + um chip dinâmico para cada monitor/gestor que tem pelo menos um atendimento finalizado.
 - **Agrupamento por dia:** quando o período cobre mais de 1 dia, a lista aparece separada por cabeçalhos de data ("Hoje", "Ontem", ou dia da semana + data), cada grupo mostrando o total faturado daquele dia.
-- Cada linha do histórico mostra: brinquedo, cliente, tempo utilizado, horário de início, valor e forma de pagamento — sem imagem nem anel (removidos para priorizar leitura rápida em texto).
+- Cada linha do histórico mostra: brinquedo, cliente, tempo utilizado, horário de início, valor final (já com desconto, sinalizado quando houver) e a lista de meios de pagamento — sem imagem nem anel (removidos para priorizar leitura rápida em texto).
 - Botão **"Gerar PDF do histórico"** (simulado — gera nome de arquivo baseado no período filtrado).
 
 ### 5.8 Fechamento de Caixa (só Gestor)
@@ -171,7 +180,32 @@ Poucos toques para ações centrais, botões grandes para uso em pé/ao ar livre
 
 ---
 
-## 8. Observações sobre o Protótipo
+## 8. Alinhamento com a Modelagem de Banco de Dados v1
+
+A partir do documento `Servio_Modelagem_BD_v1`, a modelagem passa a ser a fonte de verdade para campos e regras. O protótipo foi alinhado nos seguintes pontos:
+
+| Ajuste | Onde |
+|---|---|
+| Flag do pacote renomeada para "Exibir pacote no atendimento" (`exibe_pacote_atendimento`) | Cadastro de Pacotes, Novo Atendimento |
+| Telefone do cliente e nome do responsável no atendimento (opcionais) | Novo Atendimento, detalhe |
+| Status "Finalizado" em locações, atribuído só pelo pagamento total | Locações |
+| E-mail do cliente | Cadastro de Locações |
+| Pacote (referência única) + brinquedos avulsos (N:N) na mesma locação | Cadastro de Locações |
+| E-mail, telefone e data de nascimento | Cadastro de Usuários |
+| Cor predominante | Cadastro de Brinquedos |
+| Desconto na cobrança | Pagamento |
+| 4 meios de pagamento: `PIX`, `CREDITO`, `DEBITO`, `DINHEIRO` | Pagamento, histórico |
+| Pagamento dividido — lista de `{metodo, valor}` no lugar de um método único | Pagamento, histórico, locações |
+
+**Fora de escopo nesta rodada:** o sistema dinâmico de perfis e permissões (`tipos_usuarios` + `acessos_sistemas` + `tipos_usuarios_acessos`). Os perfis seguem fixos como Gestor/Monitor.
+
+### 8.1 Correção a levar para o documento de modelagem
+
+> A tabela `pagamentos` está com as colunas `atendimento` e `locacao` marcadas como **ambas obrigatórias (Não nulo)** simultaneamente, o que é inconsistente — um pagamento pertence a um atendimento OU a uma locação, nunca aos dois ao mesmo tempo. A correção sugerida é tornar as duas colunas **nulas**, com uma regra de negócio exigindo que **pelo menos uma** esteja preenchida — exatamente o mesmo padrão já usado corretamente na tabela `atendimentos` entre as colunas `brinquedo` e `pacote`.
+
+---
+
+## 9. Observações sobre o Protótipo
 
 Este documento descreve o comportamento **tal como implementado no protótipo interativo**, que roda inteiramente no navegador sem backend. Para uma implementação de produção, ainda seriam necessários:
 

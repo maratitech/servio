@@ -122,6 +122,8 @@
         </div>
 
         <div class="field"><i class="fa-regular fa-user"></i><input id="novoClienteInput" placeholder="Nome da criança (opcional)"></div>
+        <div class="field"><i class="fa-solid fa-phone"></i><input id="novoClienteTelefone" type="tel" inputmode="tel" placeholder="Telefone do cliente (opcional)"></div>
+        <div class="field"><i class="fa-solid fa-user-shield"></i><input id="novoResponsavel" placeholder="Nome do responsável (opcional)"></div>
 
         <div class="summary-bar">
           <div><div class="lbl">Valor estimado</div><div class="val" id="estVal">R$ 18,00</div></div>
@@ -186,6 +188,7 @@
           </div>
           <div class="toyname" id="detailToy">Pula-pula Colorido</div>
           <div class="toymeta" id="detailMeta">João · iniciado às 15:40 · Carlos</div>
+          <div class="toymeta" id="detailContato" style="display:none;"></div>
           <div class="detail-tagline" id="detailTimeTag"></div>
           <div>
             <span class="status-chip andamento" id="detailStatus">Em andamento</span>
@@ -233,7 +236,7 @@
         <h2 class="title" id="pagTitle">Finalizar</h2>
         <div class="pay-body" id="payBody">
           <div class="pay-hero">
-            <div class="big-ring"><div class="in"><b id="payTime">15:00</b><small>tempo utilizado</small></div></div>
+            <div class="big-ring" id="payRing"><div class="in"><b id="payTime">15:00</b><small>tempo utilizado</small></div></div>
             <div class="toyname" id="payToy">Pula-pula Colorido</div>
             <div class="toymeta" id="payMeta">João · 15 min</div>
           </div>
@@ -241,13 +244,28 @@
           <div class="amount-block">
             <div class="lbl">Valor a receber</div>
             <div class="amount" id="payAmount">R$ 18,00</div>
+            <div class="amount-breakdown" id="payBreakdown" style="display:none;"></div>
           </div>
+
+          <div class="filter-label" style="margin-top:0;">Desconto (opcional)</div>
+          <div class="field" style="margin-top:0;"><i class="fa-solid fa-tag"></i><input id="payDesconto" inputmode="decimal" placeholder="Ex: 5,00" oninput="applyDesconto()"></div>
+
+          <div id="payLinesBox" style="display:none;">
+            <div class="section-head" style="margin-top:0;"><h3>Pagamentos informados</h3></div>
+            <div id="payLinesList"></div>
+          </div>
+          <div class="pay-balance" id="payBalance"><span>Restante a pagar</span><b id="payBalanceVal">R$ 18,00</b></div>
 
           <div class="section-head" style="margin-top:0;"><h3>Forma de pagamento</h3></div>
           <div class="pay-methods" id="payMethods">
             <button class="pm sel" onclick="pickPay(this,'pix')"><div class="ic"><i class="fa-solid fa-qrcode"></i></div><span>Pix</span></button>
             <button class="pm" onclick="pickPay(this,'dinheiro')"><div class="ic"><i class="fa-solid fa-money-bill-wave"></i></div><span>Dinheiro</span></button>
             <button class="pm" onclick="pickPay(this,'cartao')"><div class="ic"><i class="fa-solid fa-credit-card"></i></div><span>Cartão</span></button>
+          </div>
+
+          <div class="chip-row" id="cardKindChips" style="display:none;margin-bottom:14px;">
+            <button class="chip" data-k="CREDITO" onclick="pickCardKind(this)"><i class="fa-regular fa-credit-card"></i> Crédito</button>
+            <button class="chip" data-k="DEBITO" onclick="pickCardKind(this)"><i class="fa-solid fa-money-check-dollar"></i> Débito</button>
           </div>
 
           <div class="pay-panel show" id="panelPix">
@@ -272,6 +290,7 @@
           </div>
 
           <div class="pay-panel" id="panelDinheiro">
+            <div class="filter-label" style="margin-top:0;">Valor recebido em dinheiro</div>
             <div class="cash-input"><span>R$</span><input type="text" inputmode="decimal" id="cashInput" placeholder="0,00" oninput="calcTroco()"></div>
             <div class="cash-chips" id="cashChips"></div>
             <div class="troco-line"><span class="lbl">Troco</span><span class="val" id="trocoVal">R$ 0,00</span></div>
@@ -284,9 +303,13 @@
             </div>
           </div>
 
+          <div class="field"><i class="fa-solid fa-coins"></i><input id="payLineValor" inputmode="decimal" placeholder="Valor pago neste método" oninput="onPayLineValorInput()"></div>
+          <button class="btn-ghost" id="addPayLineBtn" onclick="addPayLine()"><i class="fa-solid fa-plus"></i> Pagar o restante em outro método</button>
+
+          <div style="height:10px;"></div>
           <button class="btn-primary" id="confirmPayBtn" onclick="confirmPayment()">Confirmar pagamento</button>
           <div style="height:10px;"></div>
-          <button class="btn-ghost" onclick="go('ativos')">Cancelar</button>
+          <button class="btn-ghost" onclick="cancelPayment()">Cancelar</button>
         </div>
 
         <div class="success-state" id="successState">
@@ -317,9 +340,12 @@
             <div class="field"><i class="fa-solid fa-cake-candles"></i><input id="locEvento" placeholder="Nome do evento (ex: Festa da Maria - 6 anos)"></div>
             <div class="field"><i class="fa-regular fa-user"></i><input id="locCliente" placeholder="Nome do cliente"></div>
             <div class="field"><i class="fa-solid fa-phone"></i><input id="locTelefone" placeholder="Telefone / WhatsApp"></div>
+            <div class="field"><i class="fa-regular fa-envelope"></i><input id="locEmail" type="email" placeholder="E-mail do cliente (opcional)"></div>
             <div class="field"><i class="fa-regular fa-calendar"></i><input type="date" id="locData"></div>
             <div class="field"><i class="fa-regular fa-clock"></i><input id="locHorario" placeholder="Horário (ex: 15h–19h)"></div>
-            <div class="filter-label" style="margin-top:0;">Brinquedos / combo</div>
+            <div class="filter-label" style="margin-top:0;">Pacote</div>
+            <div class="multi-chip-row" id="locPacoteChips"></div>
+            <div class="filter-label" style="margin-top:0;">Brinquedos avulsos</div>
             <div class="multi-chip-row" id="locToyChips"></div>
             <div class="field"><i class="fa-solid fa-sack-dollar"></i><input id="locValor" placeholder="Valor total (ex: 150,00)"></div>
             <div class="filter-label" style="margin-top:0;">Status</div>
@@ -395,6 +421,9 @@
           <div class="field"><i class="fa-solid fa-users"></i><input id="newToyCap" placeholder="Capacidade máxima (crianças)"></div>
           <div class="field"><i class="fa-solid fa-sack-dollar"></i><input id="newToyPrice" placeholder="Valor por minuto (ex: 1,20)"></div>
           <div class="field"><i class="fa-solid fa-tag"></i><input id="newToyLoc" placeholder="Valor para locação (ex: 150,00)"></div>
+          <div class="filter-label" style="margin-top:0;">Cor predominante</div>
+          <div class="chip-row" id="toyCorChips" style="margin-bottom:10px;"></div>
+          <div class="field" id="toyCorOutraField" style="display:none;"><i class="fa-solid fa-palette"></i><input id="newToyCorOutra" placeholder="Descreva a cor (ex: turquesa)"></div>
           <div class="form-actions">
             <button class="btn-primary" onclick="saveToy()">Salvar brinquedo</button>
             <button class="btn-ghost" onclick="closeToyForm()"><i class="fa-solid fa-xmark"></i></button>
@@ -431,7 +460,7 @@
           </div>
           <div class="reg-row" style="cursor:default;margin-bottom:14px;">
             <div class="reg-ic"><i class="fa-solid fa-stopwatch"></i></div>
-            <div class="reg-info"><div class="nm">Tempo fixo no atendimento</div><div class="meta">Mostra este pacote como opção de tempo fixo na tela Novo Atendimento</div></div>
+            <div class="reg-info"><div class="nm">Exibir pacote no atendimento</div><div class="meta">Mostra este pacote como opção na tela Novo Atendimento</div></div>
             <label class="toggle"><input type="checkbox" id="newPacoteAtendFlag"><span class="slider"></span></label>
           </div>
           <div class="form-actions">
@@ -454,6 +483,9 @@
             <button class="chip sel" data-r="gestor" onclick="pickNewRole(this)">Gestor</button>
             <button class="chip" data-r="monitor" onclick="pickNewRole(this)">Monitor</button>
           </div>
+          <div class="field"><i class="fa-regular fa-envelope"></i><input id="newUserEmail" type="email" placeholder="E-mail (opcional)"></div>
+          <div class="field"><i class="fa-solid fa-phone"></i><input id="newUserTelefone" type="tel" inputmode="tel" placeholder="Telefone (opcional)"></div>
+          <div class="field"><i class="fa-solid fa-cake-candles"></i><input id="newUserNascimento" type="date" placeholder="Data de nascimento"></div>
           <div class="field"><i class="fa-solid fa-lock"></i><input id="newUserPin" placeholder="PIN de 4 dígitos" maxlength="4" inputmode="numeric"></div>
           <button class="btn-primary" onclick="saveUser()">Salvar usuário</button>
         </div>
