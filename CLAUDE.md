@@ -1,6 +1,6 @@
 # Servio Kids — Protótipo (contexto para Claude Code)
 
-> **Ajuste os nomes de arquivo abaixo** para bater exatamente com o que você criou ao separar o HTML original (`index.html` + CSS/JS dedicados). Assumi `index.html`, `styles.css` e `script.js` como convenção — se você usou outros nomes, atualize esta seção antes de seguir.
+> Nomes de arquivo confirmados: `index.html`, `prototipo/style.css` e `prototipo/scripts.js`.
 
 ## O que é este projeto
 
@@ -12,7 +12,7 @@ Não é um app real publicável — é um **simulador de interface e fluxo** usa
 
 ```
 /index.html      → estrutura (markup das telas dentro do "phone frame")
-/prototipo/styles.css       → todo o design system (cores, tipografia, componentes)
+/prototipo/style.css        → todo o design system (cores, tipografia, componentes)
 /prototipo/scripts.js        → toda a lógica (dados em memória, navegação, cronômetros, CRUD)
 ```
 
@@ -24,14 +24,14 @@ Tudo roda 100% no navegador. Não há build step, não há dependências de paco
 - **Fontes:** Sora (títulos, números, valores monetários) e Inter (corpo), carregadas via Google Fonts.
 - **Ícones:** Font Awesome, **autohospedado** (fonte woff2 embutida em base64 no CSS) — não usar CDN externo (cdnjs), pois esse ambiente já teve problemas de bloqueio de recursos externos em sandboxes/iframes. Qualquer novo ícone deve usar uma classe já presente no pacote Font Awesome Free.
 - **Imagens** (logo, fotos de brinquedos, fotos de pacotes): embutidas como `data:image/png;base64,...` diretamente no HTML/JS, para o protótipo continuar sendo um artefato autocontido e portátil. Ao adicionar novas imagens, seguir o mesmo padrão (não referenciar arquivos externos soltos, a menos que o projeto passe a ter uma pasta `/assets` — nesse caso, atualizar esta nota).
-- **Sem persistência real:** todos os dados (`toys`, `pacotes`, `locacoes`, `users`, `atendimentosAtivos`) vivem em variáveis JS no `script.js`, resetando a cada reload. Não há API, banco de dados ou `localStorage`/`sessionStorage` (propositalmente evitado).
+- **Sem persistência real:** todos os dados (`toys`, `pacotes`, `locacoes`, `users`, `atendimentosAtivos`) vivem em variáveis JS no `scripts.js`, resetando a cada reload. Não há API, banco de dados ou `localStorage`/`sessionStorage` (propositalmente evitado).
 - **Idioma:** interface e nomes de variáveis/funções em português (`renderAtLists`, `abrirAtendimento` etc. — nem tudo é traduzido, então siga o padrão já existente arquivo por arquivo).
 
 ## Estrutura de navegação (SPA simulada)
 
 Uma única página com várias `<section class="screen">` empilhadas dentro de um "phone frame" (mockup de celular). A navegação troca a classe `.active` entre elas via função `go(nomeDaTela)` — não há roteamento de URL real.
 
-Telas principais: `profile` (seleção de usuário) → `pin` (login) → `home` → `novo` (novo atendimento) → `ativos` (atendimentos ativos + histórico) → `atendimento` (detalhe) → `pagamento` → `locacoes` → `relatorios` (fechamento de caixa) → `cadastroBrinquedos` → `cadastroPacotes` → `cadastroUsuarios`.
+Telas principais: `login` (usuário + senha) → `home` → `novo` (novo atendimento) → `ativos` (atendimentos ativos + histórico) → `atendimento` (detalhe) → `pagamento` → `locacoes` → `relatorios` (fechamento de caixa) → `cadastroBrinquedos` → `cadastroPacotes` → `cadastroUsuarios` → `configuracoes`.
 
 ## Perfis de acesso
 

@@ -25,37 +25,40 @@
 | Locações (CRUD) | ✅ | ❌ aba oculta |
 | Fechamento de caixa | ✅ | ❌ aba oculta |
 | Cadastro de Brinquedos / Pacotes / Usuários | ✅ via menu ⋮ | ❌ |
-| Sair / trocar perfil | ✅ via menu ⋮ | ✅ via menu ⋮ |
+| Configurações gerais | ✅ via menu ⋮ | ❌ |
+| Receber pagamento | ✅ sempre | ⚠️ depende da configuração "Permitir que o monitor receba pagamentos" |
+| Sair | ✅ via menu ⋮ | ✅ via menu ⋮ |
 
-O cadastro de usuário tem nome, perfil, **e-mail**, **telefone**, **data de nascimento** e PIN. Cada usuário tem status **Ativo/Inativo**. Usuários inativos **não aparecem mais** na tela de seleção de perfil (antes apareciam esmaecidos; a regra foi simplificada para listar só ativos).
+O cadastro de usuário tem nome, perfil, **e-mail** (que é o usuário de login), **telefone**, **data de nascimento** e **senha**. Cada usuário tem status **Ativo/Inativo** — inativos não conseguem entrar, mesmo com a senha correta. A lista de usuários permite edição ao tocar no item, no mesmo padrão dos demais cadastros.
+
+O sistema dinâmico de perfis/permissões (`tipos_usuarios` + `acessos_sistemas` + `tipos_usuarios_acessos`) segue **fora de escopo** — os perfis continuam fixos em Gestor/Monitor.
 
 ---
 
 ## 3. Autenticação (Login)
 
-**3.1 Tela de Perfil**
-- Logomarca oficial da Servio no topo (arquivo de imagem único, sem texto "Kids").
-- "Selecione seu perfil para continuar".
-- **Abas "Gestores" / "Monitores"** logo abaixo da mensagem — trocar de aba troca a lista exibida (não aparecem mais as duas listas juntas).
-- Cada aba lista **somente usuários ativos** daquele tipo (avatar, nome, "Gestor(a)"/"Monitor(a)", etiqueta "Ativo"). Se não houver nenhum, mostra aviso de lista vazia.
-- Tocar em um usuário leva à tela de PIN.
+**3.1 Tela única de login** (substituiu a seleção de perfil e o teclado de PIN, ambos removidos)
+- Logomarca oficial da Servio no topo.
+- Dois campos: **Usuário** (o e-mail cadastrado) e **Senha** (mascarada, com botão de olho para exibir/ocultar).
+- Botão **Entrar**. Enter no campo de usuário pula para a senha; Enter na senha efetua o login.
+- Caixa de acessos de demonstração no rodapé da tela, listando um gestor e um monitor ativos com suas senhas (recurso de protótipo).
 
-**3.2 Tela de PIN**
-- Avatar grande (92px), nome em preto, papel em cinza, link "‹ Trocar perfil".
-- Teclado numérico em formato de pílula (não mais círculos), números grandes (26px), tecla de apagar em destaque (navy, ícone branco), ocupando a largura útil da tela.
-- 4 dígitos → autenticação automática → Início.
+**3.2 Regras de validação**
+- Usuário inexistente ou senha incorreta → toast "Usuário ou senha incorretos", permanece no login.
+- Usuário **inativo**, mesmo com senha correta → toast orientando a procurar um gestor.
+- Sucesso → define `currentUser`/`currentRole`, aplica as regras de perfil e vai para Início.
 
-**3.3 Logout:** menu ⋮ → "Sair (trocar perfil)" → volta para a tela de Perfil.
+**3.3 Logout:** menu ⋮ → "Sair" → limpa os campos e volta para o login.
 
 ---
 
 ## 4. Estrutura de Navegação
 
 - **Barra de status:** horário + etiqueta do perfil atual (Gestor/Monitor).
-- **Appbar (barra azul sólida):** presente em todas as telas internas exceto Perfil/PIN. Ícone mini da marca + "Servio" (sem "Kids") em branco à esquerda; botão ⋮ à direita.
-- **Menu ⋮:** Gestor vê "Cadastrar brinquedos", "Cadastrar pacotes", "Cadastrar usuários", divisor, "Sair"; Monitor vê só "Sair".
+- **Appbar (barra azul sólida):** presente em todas as telas internas exceto o Login. Ícone mini da marca + "Servio" (sem "Kids") em branco à esquerda; botão ⋮ à direita.
+- **Menu ⋮:** Gestor vê "Cadastrar brinquedos", "Cadastrar pacotes", "Cadastrar usuários", "Configurações gerais", divisor, "Sair"; Monitor vê só "Sair".
 - **Tab bar inferior:** Início / Atendim. / Locações / Caixa (Gestor); Início / Atendim. (Monitor — os outros dois ficam ocultos).
-- Telas de fluxo/detalhe (PIN, detalhe do atendimento, pagamento, telas de cadastro) escondem a tab bar e usam link "‹ Voltar" no topo.
+- Telas de fluxo/detalhe (detalhe do atendimento, pagamento, telas de cadastro, configurações) escondem a tab bar e usam link "‹ Voltar" no topo.
 
 ---
 
@@ -67,6 +70,7 @@ Tela **Novo Atendimento** abre com um filtro no topo: **"Brinquedos"** (padrão)
 
 - **Modo Brinquedos:** grade de brinquedos ativos (com foto real cadastrada) + seção "Tempo" com chips **10 / 15 / 20 / 30 min** e um quinto chip **"Outro"** que revela um campo numérico para o operador digitar qualquer duração. Valor estimado = preço/min do brinquedo × minutos escolhidos, recalculado ao vivo.
 - **Modo Pacote:** lista os pacotes que estão **Ativos** e com a flag **"Exibir pacote no atendimento"** (`exibe_pacote_atendimento`) ligada — cada card mostra nome do pacote, valor, tempo (com unidade) e os brinquedos inclusos. Tempo é convertido internamente para minutos (minutos ×1, horas ×60, dias ×1440, meses ×43200).
+- **Monitor responsável:** quando quem cria é um **Gestor**, aparece um seletor com "Eu (nome)" + os monitores ativos; o atendimento é gravado no nome do escolhido (padrão: o próprio gestor). O Monitor não vê esse seletor — é sempre o responsável pelos próprios atendimentos.
 - Nome da criança, **telefone do cliente** e **nome do responsável** são opcionais em ambos os modos (o responsável cobre o caso de a criança ser atendida sem o responsável presente). Telefone e responsável aparecem na tela de detalhe do atendimento, não nos cards resumidos.
 - Um único toque em "Iniciar atendimento" cria o registro (`id`, `toy`, `cliente`, `op` = usuário logado, `horaInicio`, `data`, `minutos`, `valor`, `status:'ativo'`) e o cronômetro real começa a contar a partir de `Date.now()`.
 
@@ -78,7 +82,9 @@ Tela **Novo Atendimento** abre com um filtro no topo: **"Brinquedos"** (padrão)
 - **Anel de progresso:** cor dinâmica conforme tempo restante (verde → amarelo escuro → vermelho). Para atendimentos de **pacote**, o anel normal é substituído por um **círculo verde sólido com ícone de infinito e o texto "Tempo Livre"** — tanto nas listas quanto no anel grande da tela de detalhe.
 - **Nome do operador** aparece em **negrito e azul** logo após o tempo, tanto nos cards das listas (Início/Atendimentos) quanto na tela de detalhe.
 - **Pausar/Retomar:** disponível na tela de detalhe **e** como botão direto em cada card da lista de Atendimentos ativos (atalho, sem precisar abrir o detalhe). Ao pausar, o cronômetro congela e a etiqueta muda para "Pausado".
-- **Estender tempo:** chips +5/+10/+15 min na tela de detalhe, com abertura/fechamento suave (evita "pulos" de layout) e trava contra duplo-toque acidental.
+- **Estender tempo:** chips +5/+10/+15 min na tela de detalhe, com abertura/fechamento suave (evita "pulos" de layout) e trava contra duplo-toque acidental. Em atendimentos por tempo, estender **recalcula o valor total** (preço/min × minutos totais); pacotes/Tempo Livre não têm preço por minuto e ficam de fora dessa regra.
+- **Pago Parcial:** se o atendimento já tinha pagamento antecipado e a extensão fez o valor subir, a etiqueta verde/azul "✓ Pago antecipado" vira **"Pago Parcial" em âmbar** e o detalhe passa a exibir a linha **"Restante a cobrar"**. Ao finalizar, a cobrança é apenas desse restante (`valor` total − `valorPagoAntecipado`), nunca o valor cheio de novo.
+- **Pausa:** o cronômetro congela em `elapsedMs` e nada mais é somado enquanto pausado; ao retomar, `lastResumeAt` reinicia a contagem do ponto exato. O **horário de início nunca muda** após a criação — pausas, retomadas e extensões não o alteram.
 - **Trocar brinquedo:** botão na tela de detalhe (oculto para atendimentos de pacote) — abre uma grade dos demais brinquedos ativos e um interruptor **"Recalcular valor"** (ligado por padrão: usa o preço do novo brinquedo × tempo total; desligado: mantém o valor original).
 - **Antecipar pagamento:** leva à cobrança sem encerrar o atendimento; ao confirmar, volta ao detalhe com a etiqueta "✓ Pago antecipado" e o botão de antecipar some.
 - **Finalizar:** leva à cobrança normalmente; se já pago antecipado, encerra direto sem pedir pagamento de novo. Ao finalizar, o registro muda para `status:'finalizado'`, some da lista de ativos e passa a aparecer no Histórico.
@@ -86,15 +92,22 @@ Tela **Novo Atendimento** abre com um filtro no topo: **"Brinquedos"** (padrão)
 
 ### 5.3 Pagamento (Pix / Dinheiro / Cartão de Crédito / Cartão de Débito)
 
-Os meios de pagamento seguem exatamente os 4 da modelagem: `PIX`, `CREDITO`, `DEBITO`, `DINHEIRO`.
+Os meios seguem exatamente os 4 da modelagem: `PIX`, `CREDITO`, `DEBITO`, `DINHEIRO` — cada um é um botão próprio na grade de formas de pagamento (não há mais um "Cartão" genérico com sub-opções).
 
-- **Desconto:** campo opcional em valor monetário, preenchido antes de confirmar. O total a cobrar passa a ser `valor - desconto`, com o valor original riscado e o desconto exibido ao lado — nunca só o número final. O desconto fica gravado no registro e aparece no histórico.
-- **Pix:** QR code ilustrativo + chave/CNPJ configurado, valor em destaque.
-- **Dinheiro:** campo de valor recebido + chips de valores rápidos, cálculo automático de troco (contra o valor daquela linha de pagamento), confirmação bloqueada se o recebido for menor.
-- **Cartão:** ao escolher "Cartão", dois sub-chips **obrigatórios** — Crédito / Débito. A confirmação só libera depois de escolher um dos dois. Nos textos (histórico, resumo de sucesso, cards) aparece "Cartão de Crédito" / "Cartão de Débito", nunca "Cartão" genérico.
-- **Pagamento dividido:** cada cobrança guarda uma **lista** de pagamentos (`{metodo, valor}`), não um método único. O operador informa o valor pago em um método, usa "Pagar o restante em outro método" e repete quantas vezes precisar; o saldo restante fica visível o tempo todo e as linhas já informadas podem ser removidas. Para atendimentos a confirmação só libera quando a soma cobre o total; para locações é possível registrar um pagamento parcial explicitamente.
-- Onde antes havia um texto único de método, agora se exibe a lista de forma legível (ex.: "Pix + Dinheiro").
-- Estado de sucesso com ícone de check e retorno automático (para Início, se finalização normal; para o detalhe, se pagamento antecipado; para Locações, se for cobrança de locação).
+**Área de valores — apenas dois campos:**
+- **Desconto:** editável, começa em **R$ 0,00** (nunca vazio).
+- **Valor a pagar:** calculado ao vivo (`valor total − desconto`).
+
+**Pagamento dividido por parcelas confirmadas:**
+- Tocar em um método abre o campo **"Valor desta parcela"** (pré-preenchido com o restante) e o botão **"Adicionar parcela"** — nada entra na conta sem essa confirmação explícita.
+- Cada parcela confirmada vira uma linha em **"Pagamentos registrados"** (método + valor), removível pelo "×".
+- **Total já pago** fica sempre visível, mesmo em R$ 0,00. **Restante a pagar** aparece só enquanto for maior que zero — ao quitar, a linha e a grade de métodos somem.
+- O botão de confirmação final só libera quando o restante zera. Em **locações**, com pelo menos uma parcela registrada e saldo em aberto, ele vira **"Registrar pagamento parcial"**.
+- **Dinheiro:** o campo de valor recebido calcula o troco em cima da **parcela** (não do total) e trava a adição se o recebido for menor.
+- **Pix:** QR ilustrativo com o valor da parcela. **Crédito/Débito:** orientação da maquininha.
+- Os pagamentos são gravados como lista `{metodo, valor}`; onde antes havia um método único, exibe-se a combinação legível (ex.: "Pix + Cartão de Débito").
+
+**Autorização do gestor:** se a configuração "Permitir que o monitor receba pagamentos" estiver **desligada** e quem estiver logado for Monitor, ele preenche tudo normalmente, mas a confirmação abre um **modal de autorização** — escolher um gestor ativo + digitar a senha dele. Senha errada mantém a tela como está (toast de erro); senha correta conclui o pagamento. Para Gestor, ou com a configuração ligada, o fluxo segue direto.
 
 ### 5.4 Cadastro de Brinquedos
 
@@ -134,9 +147,18 @@ Filtros de período e monitor (mesmo padrão do Histórico), indicadores (fatura
 
 ---
 
+### 5.9 Configurações Gerais (só Gestor)
+
+Tela acessível pelo menu ⋮, montada a partir de uma **lista de configurações** (`appSettings`) — para criar uma nova opção basta acrescentar um item com `key`, `label`, `desc` e `value`; a tela se redesenha sozinha, sem layout dedicado por opção.
+
+| Configuração | Padrão | Efeito |
+|---|---|---|
+| Permitir que o monitor receba pagamentos | Ligado | Desligada, a confirmação de pagamento feita por um Monitor exige autorização de um gestor (ver 5.3) |
+
+
 ## 6. Fluxo de Telas (ordem de navegação)
 
-1. **Perfil** → abas Gestores/Monitores → **PIN** → **Início**
+1. **Login** (usuário + senha) → **Início**
 2. **Início** → prévia de até 3 atendimentos ativos (ordenados por urgência) → "Novo atendimento" ou "ver todos"
 3. **Novo Atendimento** → filtro Brinquedos/Pacote → (grade + tempo) ou (lista de pacotes) → iniciar → **Atendimentos ativos**
 4. **Atendimentos** → alterna Ativos/Histórico → toque no card (ativos) → **Detalhe do Atendimento**
@@ -145,6 +167,7 @@ Filtros de período e monitor (mesmo padrão do Histórico), indicadores (fatura
 7. **Locações** (Gestor) → filtro de status → cadastrar/editar/cancelar
 8. **Fechamento de Caixa** (Gestor) → filtros → indicadores/gráfico/tabela → PDF
 9. **Cadastro de Brinquedos / Pacotes / Usuários** (Gestor, via menu ⋮) → lista com edição ao toque + botão "+ Novo"
+10. **Configurações gerais** (Gestor, via menu ⋮) → lista de interruptores
 
 ---
 
@@ -197,7 +220,18 @@ A partir do documento `Servio_Modelagem_BD_v1`, a modelagem passa a ser a fonte 
 | 4 meios de pagamento: `PIX`, `CREDITO`, `DEBITO`, `DINHEIRO` | Pagamento, histórico |
 | Pagamento dividido — lista de `{metodo, valor}` no lugar de um método único | Pagamento, histórico, locações |
 
-**Fora de escopo nesta rodada:** o sistema dinâmico de perfis e permissões (`tipos_usuarios` + `acessos_sistemas` + `tipos_usuarios_acessos`). Os perfis seguem fixos como Gestor/Monitor.
+Rodada seguinte:
+
+| Ajuste | Onde |
+|---|---|
+| Login por usuário (e-mail) e senha, no lugar da seleção de perfil + PIN | Login, Cadastro de Usuários |
+| Gestor atribui o monitor responsável pelo atendimento | Novo Atendimento |
+| Extensão de atendimento pago recalcula o valor e gera "Pago Parcial" | Detalhe do atendimento, Pagamento |
+| Desconto padrão R$ 0,00 e apenas "Desconto" + "Valor a pagar" | Pagamento |
+| Parcelas confirmadas uma a uma, com total pago sempre visível | Pagamento |
+| Tela de Configurações gerais + autorização do gestor para o monitor receber | Configurações, Pagamento |
+
+**Fora de escopo:** o sistema dinâmico de perfis e permissões (`tipos_usuarios` + `acessos_sistemas` + `tipos_usuarios_acessos`). Os perfis seguem fixos como Gestor/Monitor.
 
 ### 8.1 Correção a levar para o documento de modelagem
 
@@ -212,6 +246,6 @@ Este documento descreve o comportamento **tal como implementado no protótipo in
 - Persistência real de dados (hoje vive em memória, reseta a cada reload).
 - Geração real de PDF (hoje é simulada com nome de arquivo + notificação).
 - QR Code Pix funcional, gerado por integração bancária real.
-- Autenticação segura de PIN (hoje é só validação de 4 dígitos preenchidos).
+- Autenticação segura (hoje a senha é comparada em texto puro na memória do navegador, sem hash nem sessão real).
 - Sincronização multi-dispositivo e fila de sincronização offline.
 - Cálculo de "tempo livre" em pacotes de longa duração (dias/meses) considerando fechamento de caixa por turno/dia, não coberto em detalhe neste protótipo.
